@@ -5,7 +5,7 @@ from collections import deque, defaultdict
 
 # === Load Models ===
 person_bike_model = YOLO("yolov8s.pt")  # for tracking person and motorbike with BoT-SORT
-head_helmet_model = YOLO("best17_6_2-25.pt")  # custom model for helmet and head detection
+head_helmet_model = YOLO("new.pt")  # custom model for helmet and head detection
 
 # === Class & Display Settings ===
 CLASS_NAMES = {0: 'person', 3: 'motorbike'}
@@ -103,7 +103,7 @@ def process_head_helmet(frame):
 
 def main():
     global roi
-    cap = cv2.VideoCapture("test3.mp4")
+    cap = cv2.VideoCapture("test2.mp4")
     ret, first_frame = cap.read()
     if not ret:
         print("Failed to load video.")
@@ -133,7 +133,7 @@ def main():
     rx0, ry0, rx1, ry1 = min(roi[0], roi[2]), min(roi[1], roi[3]), max(roi[0], roi[2]), max(roi[1], roi[3])
 
     # === Tracking + Detection ===
-    for result in person_bike_model.track(source="test3.mp4", tracker="botsort.yaml", conf=0.4, iou=0.3, stream=True):
+    for result in person_bike_model.track(source="test2.mp4", tracker="botsort.yaml", conf=0.4, iou=0.3, stream=True):
         frame = result.orig_img
         cv2.rectangle(frame, (rx0, ry0), (rx1, ry1), (0, 255, 255), 2)
 
@@ -174,9 +174,11 @@ def main():
             cv2.circle(frame, (avg_cx, avg_cy), 5, (0, 255, 255), -1)
 
         # Draw counts
-        for i, cls in enumerate(['person', 'motorbike']):
-            cv2.putText(frame, f"{cls.title()}: {person_bike_counts[cls]}", (1000, 90 + i * 30),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, DISPLAY_COLORS[cls], 2)
+        person_sum = helmet_count + head_count
+        cv2.putText(frame, f"Person: {person_sum}", (1000, 90),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, DISPLAY_COLORS['person'], 2)
+        cv2.putText(frame, f"Motorbike: {person_bike_counts['motorbike']}", (1000, 120),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, DISPLAY_COLORS['motorbike'], 2)
 
         # Add helmet/head detection
         frame = process_head_helmet(frame)
